@@ -12,7 +12,7 @@ import services.UserService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/events")
+@RequestMapping("/events")
 public class EventController {
 
     @Autowired
@@ -23,6 +23,7 @@ public class EventController {
 
     @GetMapping
     public List<Event> getAllEvents() {
+        System.out.println("cao");
         return eventService.findAllEvents();
     }
 
