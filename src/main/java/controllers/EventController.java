@@ -4,7 +4,7 @@ import entities.Event;
 import entities.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import services.EventService;
 import services.UserService;
@@ -21,21 +21,22 @@ public class EventController {
     @Autowired
     private UserService userService;
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Event> getAllEvents() {
-        System.out.println("cao");
         return eventService.findAllEvents();
     }
 
     @PostMapping
-    public ResponseEntity<?> createEvent(@RequestBody Event event, Authentication authentication) {
-        User user = userService.findByUsername(authentication.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> createEvent(@RequestBody Event event) {
+        User user = userService.findByUsername(event.getCreatedBy().getUsername()).orElseThrow(() -> new RuntimeException("User not found"));
         event.setCreatedBy(user);
         eventService.saveEvent(event);
         return ResponseEntity.ok("Event created successfully!");
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateEvent(@PathVariable Long id, @RequestBody Event eventDetails) {
         Event event = eventService.findEventById(id).orElseThrow(() -> new RuntimeException("Event not found"));
 
@@ -49,6 +50,7 @@ public class EventController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteEvent(@PathVariable Long id) {
         eventService.deleteEvent(id);
         return ResponseEntity.ok("Event deleted successfully!");
