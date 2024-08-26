@@ -21,18 +21,23 @@ public class EventController {
     @Autowired
     private UserService userService;
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
+        Event event = eventService.findEventById(id)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        return ResponseEntity.ok(event);
+    }
+
     @GetMapping("/all")
     public List<Event> getAllEvents() {
         return eventService.findAllEvents();
     }
 
-    @PostMapping
+    @PostMapping("/create")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> createEvent(@RequestBody Event event) {
-        User user = userService.findByUsername(event.getCreatedBy().getUsername()).orElseThrow(() -> new RuntimeException("User not found"));
-        event.setCreatedBy(user);
-        eventService.saveEvent(event);
-        return ResponseEntity.ok("Event created successfully!");
+        return ResponseEntity.ok(eventService.saveEvent(event));
     }
 
     @PutMapping("/{id}")
@@ -45,8 +50,8 @@ public class EventController {
         event.setLocation(eventDetails.getLocation());
         event.setDate(eventDetails.getDate());
 
-        eventService.saveEvent(event);
-        return ResponseEntity.ok("Event updated successfully!");
+        Event event1 = eventService.saveEvent(event);
+        return ResponseEntity.ok(event1);
     }
 
     @DeleteMapping("/{id}")
