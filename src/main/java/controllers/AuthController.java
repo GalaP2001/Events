@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -93,7 +94,6 @@ public class AuthController {
 
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-            // Ručno testiranje lozinki pre nastavka autentifikacije
             boolean isPasswordMatch = passwordEncoder.matches(signUpRequest.getPassword(), userDetails.getPassword());
             System.out.println("Manual password match: " + isPasswordMatch);
 
@@ -108,7 +108,6 @@ public class AuthController {
                     .map(item -> item.getAuthority())
                     .collect(Collectors.toList());
 
-            // Vraćanje JWT-a i korisničkih podataka
             return ResponseEntity.ok(new JwtResponse(jwt,
                     userDetails.getId(),
                     userDetails.getUsername(),
@@ -118,6 +117,22 @@ public class AuthController {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new MessageResponse("Error: Authentication failed after registration."));
+        }
+    }
+
+    @GetMapping("/validateToken")
+    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String token) {
+        try {
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            if (jwtUtils.validateJwtToken(token)) {
+                return ResponseEntity.ok("Token is valid");
+            } else {
+                return ResponseEntity.status(401).body("Token is invalid or expired");
+            }
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(401).body("Token is invalid or expired");
         }
     }
 }
