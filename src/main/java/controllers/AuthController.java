@@ -38,9 +38,6 @@ public class AuthController {
     private RoleRepository roleRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
     private JwtUtils jwtUtils;
 
     @PostMapping("/signin")
@@ -78,28 +75,13 @@ public class AuthController {
         user.getRoles().add(userRole);
 
         userService.saveUser(user);
-        System.out.println("Korisnik sačuvan. Lozinka u bazi: " + user.getPassword());
 
         try {
-            boolean isPasswordMatchBeforeAuth = passwordEncoder.matches(signUpRequest.getPassword(), user.getPassword());
-            System.out.println("Pre autentifikacije - Password match: " + isPasswordMatchBeforeAuth);
-
-            if (!isPasswordMatchBeforeAuth) {
-                throw new RuntimeException("Lozinke se ne poklapaju pre autentifikacije!");  // Dodatna zaštita
-            }
-
-            // Autentifikacija korisnika odmah nakon registracije
+            // Autentifikacija korisnika odmah nakon registracije da bi se napravio i vratio jwt
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(signUpRequest.getUsername(), signUpRequest.getPassword()));
 
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
-            boolean isPasswordMatch = passwordEncoder.matches(signUpRequest.getPassword(), userDetails.getPassword());
-            System.out.println("Manual password match: " + isPasswordMatch);
-
-            if (!isPasswordMatch) {
-                throw new RuntimeException("Lozinke se ne poklapaju!");  // Dodatna zaštita
-            }
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String jwt = jwtUtils.generateJwtToken(authentication);
